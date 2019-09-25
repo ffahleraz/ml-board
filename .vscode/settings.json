@@ -1,5 +1,11 @@
 {
+    "python.pythonPath": "/anaconda/envs/ml-board/bin/python",
+    "python.linting.lintOnSave": true,
     "python.linting.enabled": true,
+    "python.linting.pylintEnabled": false,
     "python.linting.mypyEnabled": true,
-    "python.linting.mypyPath": "/anaconda/bin/mypy"
+    "python.linting.mypyPath": "/anaconda/envs/ml-board/bin/mypy",
+    "editor.formatOnSave": true,
+    "python.formatting.provider": "black",
+    "python.formatting.blackPath": "/anaconda/envs/ml-board/bin/black"
 }
