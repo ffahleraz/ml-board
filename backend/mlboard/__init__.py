@@ -2,7 +2,7 @@ import os
 
 from flask import Flask
 
-from . import session
+from . import api
 
 
 def create_app(test_config=None):
@@ -23,6 +23,6 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    app.register_blueprint(session.bp)
+    app.register_blueprint(api.bp)
 
     return app
