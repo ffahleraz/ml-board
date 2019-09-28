@@ -4,9 +4,12 @@ import axios from 'axios';
 import { withStyles, createMuiTheme, MuiThemeProvider } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import {
-  Grid, Drawer, AppBar, Toolbar, List, Divider, Typography, ListItem,
-  ListItemText
+  Drawer, AppBar, Toolbar, List, Divider, Typography, ListItem,
+  ListItemText, Button, Icon
 } from '@material-ui/core';
+import AddIcon from '@material-ui/icons/Add';
+
+import Dashboard from './Dashboard'
 
 const theme = createMuiTheme({
   palette: {
@@ -30,9 +33,8 @@ const styles = theme => ({
   drawerPaper: {
     width: drawerWidth,
   },
-  content: {
-    flexGrow: 1,
-    padding: theme.spacing(3),
+  addButton: {
+    margin: theme.spacing(1),
   },
   toolbar: theme.mixins.toolbar,
 });
@@ -42,17 +44,33 @@ class App extends React.Component {
     super(props);
     this.state = {
       sessions: [],
-      currentSessionId: null
-    }
+      currSessionId: ""
+    };
   }
 
   componentDidMount() {
+    this.fetchSessions();
+  }
+
+  fetchSessions = () => {
     axios.get(`http://localhost:5000/api/sessions`)
       .then(res => {
         const sessions = res.data.sessions;
         this.setState({ sessions });
-        console.log(this.state);
-      })
+      });
+  }
+
+  handleItemListClick = sessionId => {
+    this.setState({ currSessionId: sessionId });
+  }
+
+  handleAddButtonClick = () => {
+    axios.post(`http://localhost:5000/api/create`, {})
+      .then(res => {
+        const newSessionId = res.data.id;
+        this.setState({ currSessionId: newSessionId });
+        this.fetchSessions();
+      });
   }
 
   render() {
@@ -76,10 +94,20 @@ class App extends React.Component {
             }}
           >
             <div className={classes.toolbar} />
+            <Button
+              variant="contained"
+              size="large"
+              color="primary"
+              className={classes.addButton}
+              onClick={this.handleAddButtonClick}
+            >
+              <AddIcon />
+              New Session
+            </Button>
             <Divider />
             <List>
               {this.state.sessions.map(session => (
-                <ListItem button key={session["id"]}>
+                <ListItem button key={session["id"]} onClick={() => { this.handleItemListClick(session["id"]) }} >
                   <ListItemText
                     primary={`Session ${session["id"]}`}
                     secondary={`Created at ${session["created_at"]}`}
@@ -88,33 +116,9 @@ class App extends React.Component {
               ))}
             </List>
           </Drawer>
-          <main className={classes.content}>
-            <div className={classes.toolbar} />
-            <Typography paragraph>
-              {this.state.currentSessionId}
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt
-              ut labore et dolore magna aliqua. Rhoncus dolor purus non enim praesent elementum
-              facilisis leo vel. Risus at ultrices mi tempus imperdiet. Semper risus in hendrerit
-              gravida rutrum quisque non tellus. Convallis convallis tellus id interdum velit laoreet id
-              donec ultrices. Odio morbi quis commodo odio aenean sed adipiscing. Amet nisl suscipit
-              adipiscing bibendum est ultricies integer quis. Cursus euismod quis viverra nibh cras.
-              Metus vulputate eu scelerisque felis imperdiet proin fermentum leo. Mauris commodo quis
-              imperdiet massa tincidunt. Cras tincidunt lobortis feugiat vivamus at augue. At augue eget
-              arcu dictum varius duis at consectetur lorem. Velit sed ullamcorper morbi tincidunt. Lorem
-              donec massa sapien faucibus et molestie ac.
-            </Typography>
-            <Typography paragraph>
-              Consequat mauris nunc congue nisi vitae suscipit. Fringilla est ullamcorper eget nulla
-              facilisi etiam dignissim diam. Pulvinar elementum integer enim neque volutpat ac
-              tincidunt. Ornare suspendisse sed nisi lacus sed viverra tellus. Purus sit amet volutpat
-              consequat mauris. Elementum eu facilisis sed odio morbi. Euismod lacinia at quis risus sed
-              vulputate odio. Morbi tincidunt ornare massa eget egestas purus viverra accumsan in. In
-              hendrerit gravida rutrum quisque non tellus orci ac. Pellentesque nec nam aliquam sem et
-              tortor. Habitant morbi tristique senectus et. Adipiscing elit duis tristique sollicitudin
-              nibh sit. Ornare aenean euismod elementum nisi quis eleifend. Commodo viverra maecenas
-              accumsan lacus vel facilisis. Nulla posuere sollicitudin aliquam ultrices sagittis orci a.
-            </Typography>
-          </main>
+          {this.state.currSessionId !== "" && (
+            <Dashboard sessionId={this.state.currSessionId} />
+          )}
         </MuiThemeProvider>
       </div>
     );
@@ -124,6 +128,5 @@ class App extends React.Component {
 App.propTypes = {
   classes: PropTypes.object.isRequired,
 };
-
 
 export default withStyles(styles)(App);

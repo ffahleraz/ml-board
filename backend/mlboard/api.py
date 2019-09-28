@@ -3,6 +3,7 @@ import uuid
 import datetime
 
 import pandas as pd
+import pymongo
 from flask import Blueprint, Response, request
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.naive_bayes import GaussianNB
@@ -28,7 +29,7 @@ classifiers = {
 def get_all_sessions():
     db = get_db()
 
-    cursor = db.sessions.find({})
+    cursor = db.sessions.find({}).sort([("created_at", pymongo.DESCENDING)])
     sessions = []
     for session in cursor:
         sessions.append(
