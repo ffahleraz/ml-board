@@ -4,8 +4,10 @@ import datetime
 
 import pandas as pd
 from flask import Blueprint, Response, request
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.decomposition import PCA
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.decomposition import PCA, NMF
+from sklearn.feature_selection import SelectKBest, chi2
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
@@ -14,8 +16,12 @@ from .db import get_db
 
 bp = Blueprint("api", __name__, url_prefix="/api")
 
-dim_reduce_methods = {"pca": PCA}
-classifiers = {"random_forest": RandomForestClassifier}
+dim_reductions = {"pca": PCA(), "nmf": NMF(), "chi2": SelectKBest(chi2)}
+classifiers = {
+    "random_forest": RandomForestClassifier(),
+    "ada_boost": AdaBoostClassifier(),
+    "naive_bayes": GaussianNB(),
+}
 
 
 @bp.route("/sessions", methods=["GET"])
@@ -30,6 +36,8 @@ def get_all_sessions():
                 "id": session["id"],
                 "status": session["status"],
                 "created_at": session["created_at"].isoformat(),
+                "dim_reduction": "",
+                "classifier": "",
             }
         )
 
@@ -85,8 +93,8 @@ def train_session():
     except ValueError as e:
         return Response("invalid config", 400)
 
-    if "dim_reduce" in config and config["dim_reduce"] in dim_reduce_methods:
-        dim_reduce_method = dim_reduce_methods[config["dim_reduce"]]
+    if "dim_reduction" in config and config["dim_reduction"] in dim_reductions:
+        dim_reduction = dim_reductions[config["dim_reduction"]]
     else:
         return Response("invalid config", 400)
     if "classifier" in config and config["classifier"] in classifiers:
@@ -100,7 +108,7 @@ def train_session():
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
 
     pipeline = Pipeline(
-        [("feature_selection", dim_reduce_method()), ("classification", classifier())]
+        [("dim_reduction", dim_reduction), ("classification", classifier)]
     )
     pipeline.fit(X_train, y_train)
 
