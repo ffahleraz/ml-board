@@ -1,6 +1,7 @@
 import os
 
 from flask import Flask
+from flask_cors import CORS
 
 from . import api
 
@@ -24,5 +25,6 @@ def create_app(test_config=None):
         pass
 
     app.register_blueprint(api.bp)
+    CORS(app)
 
     return app
