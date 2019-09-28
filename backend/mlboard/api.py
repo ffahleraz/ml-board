@@ -1,5 +1,6 @@
 import json
 import uuid
+import datetime
 
 import pandas as pd
 from flask import Blueprint, Response, request
@@ -21,23 +22,35 @@ classifiers = {"random_forest": RandomForestClassifier}
 def get_all_sessions():
     db = get_db()
 
-    cursor = db.sessions.find({}, {"_id": False})
+    cursor = db.sessions.find({})
     sessions = []
     for session in cursor:
-        sessions.append(session)
+        sessions.append(
+            {
+                "id": session["id"],
+                "status": session["status"],
+                "created_at": session["created_at"].isoformat(),
+            }
+        )
 
-    return Response(json.dumps({"sessions": sessions}), 200)
+    response = {"sessions": sessions}
+    return Response(json.dumps(response), 200)
 
 
 @bp.route("/sessions/<session_id>", methods=["GET"])
 def get_session(session_id):
     db = get_db()
 
-    session = db.sessions.find_one({"id": session_id}, {"_id": False})
+    session = db.sessions.find_one({"id": session_id})
     if session is None:
         return Response("invalid session id", 404)
 
-    return Response(json.dumps(session), 200)
+    response = {
+        "id": session["id"],
+        "status": session["status"],
+        "created_at": session["created_at"].isoformat(),
+    }
+    return Response(json.dumps(response), 200)
 
 
 @bp.route("/create", methods=["POST"])
@@ -45,13 +58,15 @@ def create_session():
     new_id = uuid.uuid4().hex[:8]
 
     db = get_db()
-    db.sessions.insert({"id": new_id, "status": 0})
+    db.sessions.insert_one(
+        {"id": new_id, "status": 0, "created_at": datetime.datetime.utcnow()}
+    )
 
     session = db.sessions.find_one({"id": new_id}, {"_id": False})
     if session is None:
         return Response("internal error", 500)
 
-    return Response(json.dumps(session), 200)
+    return get_session(new_id)
 
 
 @bp.route("/train", methods=["POST"])
