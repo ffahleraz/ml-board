@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { withStyles } from '@material-ui/core/styles';
 import {
-  Box, Typography, Grid, Paper, Table, TableHead, TableBody, TableRow, TableCell
+  Button, Box, Typography, Grid, Paper, Table, TableHead, TableBody, TableRow, TableCell
 } from '@material-ui/core';
 
 const styles = theme => ({
@@ -15,6 +15,9 @@ const styles = theme => ({
     padding: theme.spacing(2),
     width: '100%',
     height: '100%',
+  },
+  button: {
+    margin: theme.spacing(4),
   },
 });
 
@@ -41,10 +44,34 @@ class Report extends React.Component {
             justify="space-evenly"
             alignItems="center"
           >
-            <Grid item xs={4}>
+            <Grid container xs={4}>
               <Paper className={classes.content}>
-                asdfasfas
+                <Grid
+                  container
+                  spacing={2}
+                  direction="column"
+                  justify="center"
+                  alignItems="center"
+                >
+                  <img
+                    src={this.props.confusionMatrix}
+                    alt="confusion matrix"
+                    width={300}
+                    height={300}
+                    style={{ "object-fit": "cover" }}
+                  />
+                </Grid>
               </Paper>
+              <Button
+                variant="contained"
+                size="large"
+                color="secondary"
+                fullWidth
+                className={classes.button}
+                onClick={this.props.onDownloadButtonClick}
+              >
+                Download Trained Model
+              </Button>
             </Grid>
             <Grid item xs={7}>
 

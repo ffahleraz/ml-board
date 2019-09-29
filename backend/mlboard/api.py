@@ -1,11 +1,13 @@
 import json
 import uuid
 import datetime
+import io
 
 import pandas as pd
 import pymongo
+import joblib
 import pickle
-from flask import Blueprint, Response, request
+from flask import Blueprint, Response, request, send_file
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.decomposition import PCA, NMF
@@ -15,7 +17,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 
 from .db import get_db
-from .helpers import plot_normalized_confusion_matrix
+from .helpers import generate_normalized_confusion_matrix
 
 bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -68,6 +70,42 @@ def get_session(session_id):
         "report": session["report"],
     }
     return Response(json.dumps(response), 200)
+
+
+@bp.route("/sessions/<session_id>/model", methods=["GET"])
+def get_session_model(session_id):
+    db = get_db()
+
+    session = db.sessions.find_one({"id": session_id})
+    if session is None:
+        return Response("invalid session id", 404)
+
+    model_stream = io.BytesIO()
+    model_stream.write(session["model"])
+    model_stream.seek(0)
+
+    return send_file(
+        model_stream,
+        mimetype="application/octet-stream",
+        attachment_filename="model.pkl",
+        as_attachment=True,
+        conditional=False,
+    )
+
+
+@bp.route("/sessions/<session_id>/conf_mat", methods=["GET"])
+def get_session_conf_mat(session_id):
+    db = get_db()
+
+    session = db.sessions.find_one({"id": session_id})
+    if session is None:
+        return Response("invalid session id", 404)
+
+    image_stream = io.BytesIO()
+    image_stream.write(session["confusion_matrix"])
+    image_stream.seek(0)
+
+    return send_file(image_stream, mimetype="image/jpeg")
 
 
 @bp.route("/create", methods=["POST"])
@@ -144,7 +182,12 @@ def train_session():
     pipeline.fit(X_train, y_train)
     y_pred = pipeline.predict(X_test)
 
+    model_stream = io.BytesIO()
+    joblib.dump(pipeline, model_stream)
+
+    confusion_matrix = generate_normalized_confusion_matrix(y_test, y_pred)
     metrics = classification_report(y_test, y_pred, output_dict=True)
+
     macro_avg = metrics.pop("macro avg")
     weighted_avg = metrics.pop("weighted avg")
     report = {
@@ -189,14 +232,12 @@ def train_session():
                 "data_object": pickle.dumps(data),
                 "data_filename": data_filename,
                 "report": report,
+                "confusion_matrix": confusion_matrix,
+                "model": model_stream.getvalue(),
             }
         },
         upsert=False,
     )
-
-    print(report)
-
-    plot_normalized_confusion_matrix(y_test, y_pred)
 
     response = {"report": report}
     return Response(json.dumps(response), 200)

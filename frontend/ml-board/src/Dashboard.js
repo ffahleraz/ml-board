@@ -35,7 +35,8 @@ class Dashboard extends React.Component {
       dimReduction: "",
       classifier: "",
       dataFilename: "",
-      report: null
+      report: null,
+      confusionMatrix: null,
     };
   }
 
@@ -60,10 +61,31 @@ class Dashboard extends React.Component {
           dataFilename: res.data['data_filename'],
           report: res.data['report'],
         });
+        if (res.data['status']) {
+          this.fetchConfusionMatrix();
+        }
       })
       .catch(err => {
         alert(err);
       });
+  }
+
+  fetchConfusionMatrix = () => {
+    axios.get(`http://localhost:5000/api/sessions/${this.props.sessionId}/conf_mat`,
+      { responseType: 'arraybuffer' })
+      .then(response => {
+        const base64 = btoa(
+          new Uint8Array(response.data).reduce(
+            (data, byte) => data + String.fromCharCode(byte),
+            '',
+          ),
+        );
+        this.setState({ confusionMatrix: "data:;base64," + base64 });
+      });
+  }
+
+  downloadModel = () => {
+    window.open(`http://localhost:5000/api/sessions/${this.props.sessionId}/model`);
   }
 
   trainSession = () => {
@@ -87,6 +109,7 @@ class Dashboard extends React.Component {
       .then(res => {
         console.log(res);
         this.setState({ report: res.data.report });
+        this.fetchConfusionMatrix();
       })
       .catch(err => {
         if (err.response) {
@@ -249,7 +272,13 @@ class Dashboard extends React.Component {
             </Button>
           </Paper>
         </Grid>
-        {this.state.report && <Report data={this.state.report} />}
+        {this.state.report &&
+          <Report
+            data={this.state.report}
+            confusionMatrix={this.state.confusionMatrix}
+            onDownloadButtonClick={this.downloadModel}
+          />
+        }
       </Grid>
     );
   }

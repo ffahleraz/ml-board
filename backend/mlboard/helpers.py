@@ -1,21 +1,19 @@
 import math
 import os
+import io
 
 import numpy as np
-from io import StringIO
 from PIL import Image, ImageDraw, ImageOps, ImageFont
 
 from sklearn.metrics import confusion_matrix
 from sklearn.utils.multiclass import unique_labels
 
 
-def plot_normalized_confusion_matrix(y_true, y_pred):
-
+def generate_normalized_confusion_matrix(y_true, y_pred):
     cm = confusion_matrix(y_true, y_pred)
     cm = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
     classes = list(unique_labels(y_true, y_pred))
 
-    print(cm)
     image_dim = 800
     fig_dim = 600
     font_size = 120
@@ -52,16 +50,7 @@ def plot_normalized_confusion_matrix(y_true, y_pred):
             fill=0,
         )
 
-    image.save("asdf.png")
+    buffer = io.BytesIO()
+    image.save(buffer, "PNG")
 
-    # buffer = StringIO()
-    # canvas = plt.get_current_fig_manager().canvas
-    # canvas.draw()
-    # pil_image = PIL.Image.frombytes(
-    #     "RGB", canvas.get_width_height(), canvas.tostring_rgb()
-    # )
-    # # pil_image.save(buffer, "PNG")
-    # pil_image.save("asdf.png")
-
-    # # plt.close()
-    # print("asdfasdfasdfa")
+    return buffer.getvalue()
