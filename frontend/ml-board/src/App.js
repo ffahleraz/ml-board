@@ -57,6 +57,9 @@ class App extends React.Component {
       .then(res => {
         const sessions = res.data.sessions;
         this.setState({ sessions });
+      })
+      .catch(err => {
+        alert(err);
       });
   }
 
@@ -70,6 +73,9 @@ class App extends React.Component {
         const newSessionId = res.data.id;
         this.setState({ currSessionId: newSessionId });
         this.fetchSessions();
+      })
+      .catch(err => {
+        alert(err);
       });
   }
 

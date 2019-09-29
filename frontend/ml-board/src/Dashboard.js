@@ -57,8 +57,12 @@ class Dashboard extends React.Component {
           createdAt: res.data['created_at'],
           dimReduction: res.data['dim_reduction'],
           classifier: res.data['classifier'],
-          dataFilename: res.data['data_filename']
+          dataFilename: res.data['data_filename'],
+          report: res.data['report'],
         });
+      })
+      .catch(err => {
+        alert(err);
       });
   }
 
@@ -85,16 +89,20 @@ class Dashboard extends React.Component {
         this.setState({ report: res.data.report });
       })
       .catch(err => {
-        // alert(err.response.data);
+        if (err.response) {
+          alert(err.response.data);
+        } else {
+          alert(err);
+        }
       });
   }
 
   handleDimReductionChange = event => {
-    this.setState({ dimReduction: event.target.value });
+    this.setState({ dimReduction: event.target.value, report: null });
   }
 
   handleClassifierChange = event => {
-    this.setState({ classifier: event.target.value });
+    this.setState({ classifier: event.target.value, report: null });
   }
 
   handleTrainButtonClick = () => {
@@ -102,8 +110,10 @@ class Dashboard extends React.Component {
   }
 
   handleDataUploadChange = event => {
-    this.setState({ data: event.target.files[0], dataFilename: event.target.files[0].name });
-    console.log(event.target.files[0].name);
+    this.setState({
+      data: event.target.files[0], dataFilename: event.target.files[0].name,
+      report: null,
+    });
   }
 
   render() {

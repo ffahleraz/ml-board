@@ -15,6 +15,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 
 from .db import get_db
+from .helpers import plot_normalized_confusion_matrix
 
 bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -194,5 +195,8 @@ def train_session():
     )
 
     print(report)
+
+    plot_normalized_confusion_matrix(y_test, y_pred)
+
     response = {"report": report}
     return Response(json.dumps(response), 200)

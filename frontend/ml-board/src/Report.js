@@ -42,7 +42,9 @@ class Report extends React.Component {
             alignItems="center"
           >
             <Grid item xs={4}>
-              <Paper className={classes.content}>asdfasdfa</Paper>
+              <Paper className={classes.content}>
+                asdfasfas
+              </Paper>
             </Grid>
             <Grid item xs={7}>
 
