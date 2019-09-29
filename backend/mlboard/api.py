@@ -99,9 +99,9 @@ def train_session():
 
     # Check session
     db = get_db()
-    if "id" not in params:
+    if "session_id" not in params:
         return Response("no session id", 400)
-    session = db.sessions.find_one({"id": params["id"]})
+    session = db.sessions.find_one({"id": params["session_id"]})
     if session is None:
         return Response("invalid session id", 400)
 
@@ -143,14 +143,14 @@ def train_session():
 
     # Save session params and file
     db.sessions.update_one(
-        {"id": params["id"]},
+        {"id": params["session_id"]},
         {
             "$set": {
                 "status": 1,
                 "dim_reduction": params["dim_reduction"],
                 "classifier": params["classifier"],
                 "data_object": pickle.dumps(data),
-                "data_filenime": data_filename,
+                "data_filename": data_filename,
             }
         },
         upsert=False,

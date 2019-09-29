@@ -5,7 +5,7 @@ import { withStyles, createMuiTheme, MuiThemeProvider } from '@material-ui/core/
 import CssBaseline from '@material-ui/core/CssBaseline';
 import {
   Drawer, AppBar, Toolbar, List, Divider, Typography, ListItem,
-  ListItemText, Button, Icon
+  ListItemText, Button
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 
@@ -107,7 +107,12 @@ class App extends React.Component {
             <Divider />
             <List>
               {this.state.sessions.map(session => (
-                <ListItem button key={session["id"]} onClick={() => { this.handleItemListClick(session["id"]) }} >
+                <ListItem
+                  button
+                  key={session["id"]}
+                  onClick={() => { this.handleItemListClick(session["id"]) }}
+                  selected={session.id === this.state.currSessionId}
+                >
                   <ListItemText
                     primary={`Session ${session["id"]}`}
                     secondary={`Created at ${session["created_at"]}`}
