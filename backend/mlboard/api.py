@@ -41,6 +41,7 @@ def get_all_sessions():
                 "dim_reduction": session["dim_reduction"],
                 "classifier": session["classifier"],
                 "data_filename": session["data_filename"],
+                "report": session["report"],
             }
         )
 
@@ -63,6 +64,7 @@ def get_session(session_id):
         "dim_reduction": session["dim_reduction"],
         "classifier": session["classifier"],
         "data_filename": session["data_filename"],
+        "report": session["report"],
     }
     return Response(json.dumps(response), 200)
 
@@ -81,6 +83,7 @@ def create_session():
             "classifier": "",
             "data_object": "",
             "data_filename": "",
+            "report": None,
         }
     )
 
@@ -139,7 +142,40 @@ def train_session():
     )
     pipeline.fit(X_train, y_train)
     y_pred = pipeline.predict(X_test)
-    print(classification_report(y_test, y_pred))
+
+    metrics = classification_report(y_test, y_pred, output_dict=True)
+    macro_avg = metrics.pop("macro avg")
+    weighted_avg = metrics.pop("weighted avg")
+    report = {
+        "accuracy": metrics.pop("accuracy"),
+        "macro_avg": {
+            "precision": macro_avg["precision"],
+            "recall": macro_avg["recall"],
+            "f1_score": macro_avg["f1-score"],
+            "support": macro_avg["support"],
+        },
+        "weighted_avg": {
+            "precision": weighted_avg["precision"],
+            "recall": weighted_avg["recall"],
+            "f1_score": weighted_avg["f1-score"],
+            "support": weighted_avg["support"],
+        },
+        "by_class": [],
+    }
+
+    for class_name in metrics.keys():
+        entry = {"class": class_name}
+        for metric_name in metrics[class_name].keys():
+            entry[metric_name] = metrics[class_name][metric_name]
+        report["by_class"].append(
+            {
+                "class_name": class_name,
+                "precision": entry["precision"],
+                "recall": entry["recall"],
+                "f1_score": entry["f1-score"],
+                "support": entry["support"],
+            }
+        )
 
     # Save session params and file
     db.sessions.update_one(
@@ -151,9 +187,12 @@ def train_session():
                 "classifier": params["classifier"],
                 "data_object": pickle.dumps(data),
                 "data_filename": data_filename,
+                "report": report,
             }
         },
         upsert=False,
     )
 
-    return "train session"
+    print(report)
+    response = {"report": report}
+    return Response(json.dumps(response), 200)

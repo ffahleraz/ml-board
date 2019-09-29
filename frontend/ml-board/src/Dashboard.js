@@ -2,10 +2,11 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import axios from 'axios';
 import { withStyles } from '@material-ui/core/styles';
-import CssBaseline from '@material-ui/core/CssBaseline';
 import {
   Grid, Paper, Box, MenuItem, Select, Typography, Button
 } from '@material-ui/core';
+
+import Report from './Report'
 
 const styles = theme => ({
   root: {
@@ -23,9 +24,6 @@ const styles = theme => ({
   button: {
     margin: theme.spacing(1),
   },
-  paper: {
-    height: 140,
-  },
 });
 
 class Dashboard extends React.Component {
@@ -37,6 +35,7 @@ class Dashboard extends React.Component {
       dimReduction: "",
       classifier: "",
       dataFilename: "",
+      report: null
     };
   }
 
@@ -83,9 +82,10 @@ class Dashboard extends React.Component {
     axios.post(url, formData, config)
       .then(res => {
         console.log(res);
+        this.setState({ report: res.data.report });
       })
       .catch(err => {
-        alert(err.response.data);
+        // alert(err.response.data);
       });
   }
 
@@ -190,7 +190,7 @@ class Dashboard extends React.Component {
             <Grid
               container
               direction="row"
-              justify="space-around"
+              justify="space-evenly"
               alignItems="center"
             >
               <Grid item xs={2}>
@@ -239,6 +239,7 @@ class Dashboard extends React.Component {
             </Button>
           </Paper>
         </Grid>
+        {this.state.report && <Report data={this.state.report} />}
       </Grid>
     );
   }
