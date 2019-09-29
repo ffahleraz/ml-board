@@ -4,6 +4,7 @@ import datetime
 
 import pandas as pd
 import pymongo
+import pickle
 from flask import Blueprint, Response, request
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.naive_bayes import GaussianNB
@@ -37,8 +38,9 @@ def get_all_sessions():
                 "id": session["id"],
                 "status": session["status"],
                 "created_at": session["created_at"].isoformat(),
-                "dim_reduction": "",
-                "classifier": "",
+                "dim_reduction": session["dim_reduction"],
+                "classifier": session["classifier"],
+                "data_filename": session["data_filename"],
             }
         )
 
@@ -58,6 +60,9 @@ def get_session(session_id):
         "id": session["id"],
         "status": session["status"],
         "created_at": session["created_at"].isoformat(),
+        "dim_reduction": session["dim_reduction"],
+        "classifier": session["classifier"],
+        "data_filename": session["data_filename"],
     }
     return Response(json.dumps(response), 200)
 
@@ -68,52 +73,87 @@ def create_session():
 
     db = get_db()
     db.sessions.insert_one(
-        {"id": new_id, "status": 0, "created_at": datetime.datetime.utcnow()}
+        {
+            "id": new_id,
+            "status": 0,
+            "created_at": datetime.datetime.utcnow(),
+            "dim_reduction": "",
+            "classifier": "",
+            "data_object": "",
+            "data_filename": "",
+        }
     )
-
-    session = db.sessions.find_one({"id": new_id}, {"_id": False})
-    if session is None:
-        return Response("internal error", 500)
 
     return get_session(new_id)
 
 
 @bp.route("/train", methods=["POST"])
 def train_session():
-    if "data" not in request.files:
-        return Response("no data file part", 400)
-    file = request.files["data"]
-    if file.filename == "":
-        return Response("data file not selected", 400)
-
-    if "config" not in request.form:
-        return Response("no config part", 400)
-
+    # Check params part
+    if "params" not in request.form:
+        return Response("no params part", 400)
     try:
-        config = json.loads(request.form["config"])
+        params = json.loads(request.form["params"])
     except ValueError as e:
-        return Response("invalid config", 400)
+        return Response("invalid params", 400)
 
-    if "dim_reduction" in config and config["dim_reduction"] in dim_reductions:
-        dim_reduction = dim_reductions[config["dim_reduction"]]
-    else:
-        return Response("invalid config", 400)
-    if "classifier" in config and config["classifier"] in classifiers:
-        classifier = classifiers[config["classifier"]]
-    else:
-        return Response("invalid config", 400)
+    # Check session
+    db = get_db()
+    if "id" not in params:
+        return Response("no session id", 400)
+    session = db.sessions.find_one({"id": params["id"]})
+    if session is None:
+        return Response("invalid session id", 400)
 
-    data = pd.read_csv(file, sep=";")
+    # Check train params
+    if "dim_reduction" in params and params["dim_reduction"] in dim_reductions:
+        dim_reduction = dim_reductions[params["dim_reduction"]]
+    else:
+        return Response("invalid params", 400)
+    if "classifier" in params and params["classifier"] in classifiers:
+        classifier = classifiers[params["classifier"]]
+    else:
+        return Response("invalid params", 400)
+
+    # Load dataset file
+    if "data" in request.files:
+        file = request.files["data"]
+        try:
+            data = pd.read_csv(file, sep=";")
+        except pd.errors.ParserError as e:
+            return Response("data is not a valid csv with ';' separator", 400)
+        data_filename = file.filename
+    else:
+        if session["status"] == 1:
+            data = pickle.loads(session["data_object"])
+            data_filename = session["data_filename"]
+        else:
+            return Response("no data file part", 400)
+
+    # Train session
     X = data.iloc[:, 0:-1]
     y = data.iloc[:, -1:].values.ravel()
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
-
     pipeline = Pipeline(
         [("dim_reduction", dim_reduction), ("classification", classifier)]
     )
     pipeline.fit(X_train, y_train)
-
     y_pred = pipeline.predict(X_test)
     print(classification_report(y_test, y_pred))
+
+    # Save session params and file
+    db.sessions.update_one(
+        {"id": params["id"]},
+        {
+            "$set": {
+                "status": 1,
+                "dim_reduction": params["dim_reduction"],
+                "classifier": params["classifier"],
+                "data_object": pickle.dumps(data),
+                "data_filenime": data_filename,
+            }
+        },
+        upsert=False,
+    )
 
     return "train session"
