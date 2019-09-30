@@ -97,10 +97,6 @@ class Dashboard extends React.Component {
 
     if (this.state.data) {
       formData.append('data', this.state.data);
-      console.log("ada")
-      console.log(this.state.dataFilename)
-    } else {
-      console.log("gaada")
     }
 
     const params = JSON.stringify({
@@ -139,7 +135,6 @@ class Dashboard extends React.Component {
   }
 
   handleTrainButtonClick = () => {
-    console.log(this.state);
     this.trainSession();
   }
 
@@ -261,6 +256,7 @@ class Dashboard extends React.Component {
                   <input
                     type="file"
                     onChange={this.handleDataUploadChange}
+                    onClick={event => { event.target.value = null }}
                     style={{ display: 'none' }}
                   />
                 </Button>
