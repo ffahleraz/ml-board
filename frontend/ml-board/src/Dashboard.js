@@ -34,6 +34,7 @@ class Dashboard extends React.Component {
       createdAt: "",
       dimReduction: "",
       classifier: "",
+      data: null,
       dataFilename: "",
       report: null,
       confusionMatrix: null,
@@ -47,6 +48,7 @@ class Dashboard extends React.Component {
   componentDidUpdate(prevProps) {
     if (this.props.sessionId !== prevProps.sessionId) {
       this.fetchSessionData();
+      this.setState({ data: null })
     }
   }
 
@@ -92,13 +94,22 @@ class Dashboard extends React.Component {
     const url = `http://localhost:5000/api/train`;
 
     const formData = new FormData();
-    formData.append('data', this.state.data);
+
+    if (this.state.data) {
+      formData.append('data', this.state.data);
+      console.log("ada")
+      console.log(this.state.dataFilename)
+    } else {
+      console.log("gaada")
+    }
+
     const params = JSON.stringify({
       'session_id': this.props.sessionId,
       'dim_reduction': this.state.dimReduction,
       'classifier': this.state.classifier
     });
     formData.append('params', params);
+
     const config = {
       headers: {
         'content-type': 'multipart/form-data'
@@ -107,7 +118,6 @@ class Dashboard extends React.Component {
 
     axios.post(url, formData, config)
       .then(res => {
-        console.log(res);
         this.setState({ report: res.data.report });
         this.fetchConfusionMatrix();
       })
@@ -129,12 +139,14 @@ class Dashboard extends React.Component {
   }
 
   handleTrainButtonClick = () => {
+    console.log(this.state);
     this.trainSession();
   }
 
   handleDataUploadChange = event => {
     this.setState({
-      data: event.target.files[0], dataFilename: event.target.files[0].name,
+      data: event.target.files[0],
+      dataFilename: event.target.files[0].name,
       report: null,
     });
   }
@@ -266,7 +278,7 @@ class Dashboard extends React.Component {
               fullWidth
               className={classes.button}
               onClick={this.handleTrainButtonClick}
-              disabled={!this.state.dimReduction || !this.state.classifier || (!this.state.data && !this.state.status)}
+              disabled={!this.state.dimReduction || !this.state.classifier || (!this.state.dataFilename && !this.state.status)}
             >
               Train
             </Button>

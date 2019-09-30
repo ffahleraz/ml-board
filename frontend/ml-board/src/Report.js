@@ -44,34 +44,36 @@ class Report extends React.Component {
             justify="space-evenly"
             alignItems="center"
           >
-            <Grid container xs={4}>
-              <Paper className={classes.content}>
-                <Grid
-                  container
-                  spacing={2}
-                  direction="column"
-                  justify="center"
-                  alignItems="center"
+            <Grid item xs={4}>
+              <Grid container>
+                <Paper className={classes.content}>
+                  <Grid
+                    container
+                    spacing={2}
+                    direction="column"
+                    justify="center"
+                    alignItems="center"
+                  >
+                    <img
+                      src={this.props.confusionMatrix}
+                      alt="confusion matrix"
+                      width={300}
+                      height={300}
+                      style={{ "objectFit": "cover" }}
+                    />
+                  </Grid>
+                </Paper>
+                <Button
+                  variant="contained"
+                  size="large"
+                  color="secondary"
+                  fullWidth
+                  className={classes.button}
+                  onClick={this.props.onDownloadButtonClick}
                 >
-                  <img
-                    src={this.props.confusionMatrix}
-                    alt="confusion matrix"
-                    width={300}
-                    height={300}
-                    style={{ "object-fit": "cover" }}
-                  />
-                </Grid>
-              </Paper>
-              <Button
-                variant="contained"
-                size="large"
-                color="secondary"
-                fullWidth
-                className={classes.button}
-                onClick={this.props.onDownloadButtonClick}
-              >
-                Download Trained Model
+                  Download Model
               </Button>
+              </Grid>
             </Grid>
             <Grid item xs={7}>
 
